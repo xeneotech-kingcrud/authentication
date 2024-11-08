@@ -7,8 +7,7 @@ import(
 	
 	"github.com/dgrijalva/jwt-go"
 )
-var jwtKey = []byte("secret")
-func generateJWT(delay int64)(string, error){
+func generateJWT(delay int64, jwtKey []byte)(string, error){
 	expirationTime := time.Now().Add(time.Duration(delay)*time.Second)
 	claims := &jwt.StandardClaims{
 		ExpiresAt: expirationTime.Unix(),
@@ -18,8 +17,8 @@ func generateJWT(delay int64)(string, error){
 	return tokenString, err
 }
 
-func loginHandler(w http.ResponseWriter,r *http.Request){
-	tokenString, err := generateJWT(3600)
+func loginHandler(w http.ResponseWriter,r *http.Request, jwtKey []byte){
+	tokenString, err := generateJWT(3600, jwtKey)
 	if err != nil{
 		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
 	return
@@ -27,7 +26,7 @@ func loginHandler(w http.ResponseWriter,r *http.Request){
 	w.Write([]byte(tokenString))
 }
 
-func jwtMiddleware(next http.Handler) http.Handler{
+func JwtMiddleware(next http.Handler, jwtKey []byte) http.Handler{
 	return http.HandlerFunc(func(w http.ResponseWriter,r *http.Request){
 		const bearerPrefix = "Bearer"
 		authHeader := r.Header.Get("Authorization")
